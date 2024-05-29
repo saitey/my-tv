@@ -1,0 +1,47 @@
+name: 同步 lizongying/my-tv 更新
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  sync-updates:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出存储库
+        uses: actions/checkout@v3
+
+      - name: 设置 upstram 仓库的 URL
+        run: |
+          echo "UPSTREAM_REPO=https://github.com/lizongying/my-tv" >> $GITHUB_ENV
+
+      - name: 获取最新版本信息
+        run: |
+          git fetch $UPSTREAM_REPO main
+          UPSTREAM_BRANCH=$(git rev-parse $UPSTREAM_REPO/main)
+          UPSTREAM_RELEASE=$(git tag --sort=version:desc | head -n 1)
+          echo "UPSTREAM_BRANCH=$UPSTREAM_BRANCH" >> $GITHUB_ENV
+          echo "UPSTREAM_RELEASE=$UPSTREAM_RELEASE" >> $GITHUB_ENV
+
+      - name: 检查本地是否落后
+        run: |
+          if [ "$(git rev-parse HEAD)" != "$UPSTREAM_BRANCH" ]; then
+            echo "本地分支落后于上游，需要同步更新"
+            exit 1
+          fi
+
+      - name: 同步更新内容
+        run: |
+          git pull $UPSTREAM_REPO main --rebase
+
+      - name: 创建或更新 Release
+        run: |
+          if [ -z "$UPSTREAM_RELEASE" ]; then
+            echo "没有找到上游 Release，跳过创建 Release 步骤"
+          else
+            git tag -f $UPSTREAM_RELEASE
+            git push $UPSTREAM_REPO --tags
+          fi
