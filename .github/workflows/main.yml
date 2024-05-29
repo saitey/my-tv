@@ -16,7 +16,7 @@ jobs:
 
       - name: 设置 upstram 仓库的 URL
         run: |
-          echo "UPSTREAM_REPO=https://github.com/lizongying/my-tv" >> $GITHUB_ENV
+          echo "UPSTREAM_REPO=lizongying/my-tv" >> $GITHUB_ENV
 
       - name: 获取最新版本信息
         run: |
